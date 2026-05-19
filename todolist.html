@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0f9f9a">
   <title>H5 学习计划 ToDoList</title>
   <style>
@@ -32,6 +32,7 @@
       margin: 0;
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow-x: hidden;
       background:
         linear-gradient(150deg, rgba(15, 159, 154, 0.16), rgba(73, 126, 255, 0.08)),
         var(--bg);
@@ -135,6 +136,77 @@
       border: 1px solid rgba(239, 100, 97, 0.28);
       border-radius: 8px;
       font-size: 13px;
+    }
+
+    .week-tabs-wrap {
+      margin: 0 0 14px;
+    }
+
+    .week-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 2px 2px 10px;
+      scroll-padding-inline: 2px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .week-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .week-tab {
+      flex: 0 0 112px;
+      min-height: 64px;
+      padding: 9px 10px;
+      text-align: left;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.76);
+      border-radius: 8px;
+      box-shadow: 0 8px 22px rgba(16, 42, 67, 0.06);
+      touch-action: manipulation;
+      transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    }
+
+    .week-tab:focus-visible,
+    .reset-button:focus-visible,
+    .add-button:focus-visible,
+    .delete-button:focus-visible {
+      outline: 3px solid rgba(15, 159, 154, 0.26);
+      outline-offset: 2px;
+    }
+
+    .week-tab.is-active {
+      color: #ffffff;
+      background: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 12px 28px rgba(8, 127, 126, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .tab-week {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .tab-title {
+      display: block;
+      margin-top: 5px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    .tab-progress {
+      display: block;
+      margin-top: 5px;
+      font-size: 12px;
+      line-height: 1.2;
+      opacity: 0.82;
     }
 
     .week-list {
@@ -376,6 +448,10 @@
       .add-form {
         grid-template-columns: 1fr 62px;
       }
+
+      .week-tab {
+        flex-basis: 104px;
+      }
     }
   </style>
 </head>
@@ -405,6 +481,10 @@
     <section class="toolbar" aria-label="操作区">
       <p>进度和笔记会自动保存在当前浏览器。</p>
       <button class="reset-button" id="resetButton" type="button">重置</button>
+    </section>
+
+    <section class="week-tabs-wrap" aria-label="每周切换">
+      <div class="week-tabs" id="weekTabs" role="tablist" aria-label="选择学习周"></div>
     </section>
 
     <section class="week-list" id="weekList" aria-label="每周学习计划"></section>
@@ -584,6 +664,7 @@
       }
     ];
 
+    const weekTabs = document.querySelector("#weekTabs");
     const weekList = document.querySelector("#weekList");
     const totalTasks = document.querySelector("#totalTasks");
     const doneTasks = document.querySelector("#doneTasks");
@@ -591,6 +672,7 @@
     const resetButton = document.querySelector("#resetButton");
 
     let state = loadState();
+    let activeWeekIndex = 0;
 
     function createDefaultState() {
       return {
@@ -627,64 +709,141 @@
     }
 
     function render() {
-      weekList.innerHTML = "";
+      renderTabs();
+      renderActiveWeek();
+      renderSummary();
+    }
+
+    function renderTabs() {
+      weekTabs.innerHTML = "";
 
       defaultWeeks.forEach((week, weekIndex) => {
-        const card = document.createElement("article");
-        card.className = "week-card";
-
-        const defaultDone = week.tasks.filter((_, taskIndex) => isChecked(getDefaultTaskId(weekIndex, taskIndex))).length;
-        const customTasks = getCustomTasks(weekIndex);
-        const customDone = customTasks.filter((task) => task.done).length;
-        const weekTotal = week.tasks.length + customTasks.length;
-        const weekDone = defaultDone + customDone;
-
-        card.innerHTML = `
-          <header class="week-header">
-            <div class="week-topline">
-              <span class="week-number">第 ${weekIndex + 1} 周</span>
-              <span class="week-progress">${weekDone}/${weekTotal} 完成</span>
-            </div>
-            <h2 class="week-title">${escapeHtml(week.title)}</h2>
-            <p class="week-goal">${escapeHtml(week.goal)}</p>
-            ${renderFocus(week.focus)}
-          </header>
+        const stats = getWeekStats(weekIndex);
+        const tab = document.createElement("button");
+        const selected = weekIndex === activeWeekIndex;
+        tab.className = `week-tab${selected ? " is-active" : ""}`;
+        tab.type = "button";
+        tab.id = `weekTab${weekIndex}`;
+        tab.role = "tab";
+        tab.setAttribute("aria-selected", String(selected));
+        tab.setAttribute("aria-controls", "weekPanel");
+        tab.tabIndex = selected ? 0 : -1;
+        tab.innerHTML = `
+          <span class="tab-week">第 ${weekIndex + 1} 周</span>
+          <span class="tab-title">${escapeHtml(week.title)}</span>
+          <span class="tab-progress">${stats.done}/${stats.total}</span>
         `;
-
-        const taskList = document.createElement("ul");
-        taskList.className = "task-list";
-
-        week.tasks.forEach((task, taskIndex) => {
-          const id = getDefaultTaskId(weekIndex, taskIndex);
-          taskList.appendChild(createTaskItem({
-            id,
-            text: task,
-            done: isChecked(id),
-            onToggle: (checked) => toggleDefaultTask(id, checked)
-          }));
-        });
-
-        const customList = document.createElement("ul");
-        customList.className = "custom-list";
-
-        customTasks.forEach((task) => {
-          customList.appendChild(createTaskItem({
-            id: task.id,
-            text: task.text,
-            done: task.done,
-            onToggle: (checked) => toggleCustomTask(weekIndex, task.id, checked),
-            onDelete: () => deleteCustomTask(weekIndex, task.id)
-          }));
-        });
-
-        card.appendChild(taskList);
-        card.appendChild(customList);
-        card.appendChild(createAddForm(weekIndex));
-        card.appendChild(createNoteBox(weekIndex));
-        weekList.appendChild(card);
+        tab.addEventListener("click", () => setActiveWeek(weekIndex));
+        tab.addEventListener("keydown", (event) => handleTabKeydown(event, weekIndex));
+        weekTabs.appendChild(tab);
       });
 
-      renderSummary();
+      const activeTab = weekTabs.querySelector(".week-tab.is-active");
+      if (activeTab) {
+        const centeredLeft = activeTab.offsetLeft - ((weekTabs.clientWidth - activeTab.clientWidth) / 2);
+        weekTabs.scrollTo({ left: Math.max(0, centeredLeft), behavior: "smooth" });
+      }
+    }
+
+    function renderActiveWeek() {
+      weekList.innerHTML = "";
+
+      const weekIndex = activeWeekIndex;
+      const week = defaultWeeks[weekIndex];
+      const card = document.createElement("article");
+      const stats = getWeekStats(weekIndex);
+      const customTasks = getCustomTasks(weekIndex);
+      card.className = "week-card";
+      card.id = "weekPanel";
+      card.role = "tabpanel";
+      card.setAttribute("aria-labelledby", `weekTab${weekIndex}`);
+
+      card.innerHTML = `
+        <header class="week-header">
+          <div class="week-topline">
+            <span class="week-number">第 ${weekIndex + 1} 周</span>
+            <span class="week-progress">${stats.done}/${stats.total} 完成</span>
+          </div>
+          <h2 class="week-title">${escapeHtml(week.title)}</h2>
+          <p class="week-goal">${escapeHtml(week.goal)}</p>
+          ${renderFocus(week.focus)}
+        </header>
+      `;
+
+      const taskList = document.createElement("ul");
+      taskList.className = "task-list";
+
+      week.tasks.forEach((task, taskIndex) => {
+        const id = getDefaultTaskId(weekIndex, taskIndex);
+        taskList.appendChild(createTaskItem({
+          id,
+          text: task,
+          done: isChecked(id),
+          onToggle: (checked) => toggleDefaultTask(id, checked)
+        }));
+      });
+
+      const customList = document.createElement("ul");
+      customList.className = "custom-list";
+
+      customTasks.forEach((task) => {
+        customList.appendChild(createTaskItem({
+          id: task.id,
+          text: task.text,
+          done: task.done,
+          onToggle: (checked) => toggleCustomTask(weekIndex, task.id, checked),
+          onDelete: () => deleteCustomTask(weekIndex, task.id)
+        }));
+      });
+
+      card.appendChild(taskList);
+      card.appendChild(customList);
+      card.appendChild(createAddForm(weekIndex));
+      card.appendChild(createNoteBox(weekIndex));
+      weekList.appendChild(card);
+    }
+
+    function getWeekStats(weekIndex) {
+      const week = defaultWeeks[weekIndex];
+      const defaultDone = week.tasks.filter((_, taskIndex) => isChecked(getDefaultTaskId(weekIndex, taskIndex))).length;
+      const customTasks = getCustomTasks(weekIndex);
+      const customDone = customTasks.filter((task) => task.done).length;
+
+      return {
+        total: week.tasks.length + customTasks.length,
+        done: defaultDone + customDone
+      };
+    }
+
+    function setActiveWeek(weekIndex) {
+      activeWeekIndex = weekIndex;
+      render();
+    }
+
+    function handleTabKeydown(event, weekIndex) {
+      const lastIndex = defaultWeeks.length - 1;
+      let nextIndex = weekIndex;
+
+      if (event.key === "ArrowRight") {
+        nextIndex = weekIndex === lastIndex ? 0 : weekIndex + 1;
+      } else if (event.key === "ArrowLeft") {
+        nextIndex = weekIndex === 0 ? lastIndex : weekIndex - 1;
+      } else if (event.key === "Home") {
+        nextIndex = 0;
+      } else if (event.key === "End") {
+        nextIndex = lastIndex;
+      } else {
+        return;
+      }
+
+      event.preventDefault();
+      setActiveWeek(nextIndex);
+      requestAnimationFrame(() => {
+        const nextTab = document.querySelector(`#weekTab${nextIndex}`);
+        if (nextTab) {
+          nextTab.focus();
+        }
+      });
     }
 
     function createTaskItem({ id, text, done, onToggle, onDelete }) {
