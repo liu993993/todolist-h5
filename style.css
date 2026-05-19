@@ -1,0 +1,262 @@
+:root {
+  --bg: #eef8f7;
+  --panel: #ffffff;
+  --text: #102a43;
+  --muted: #6b7c8f;
+  --line: #d8e7e6;
+  --primary: #0ea5a4;
+  --primary-dark: #087f7e;
+  --danger: #ef6461;
+  --shadow: 0 18px 48px rgba(16, 42, 67, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    linear-gradient(145deg, rgba(14, 165, 164, 0.14), rgba(93, 95, 239, 0.08)),
+    var(--bg);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-shell {
+  width: min(100%, 430px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 28px 18px 24px;
+}
+
+.app-header {
+  padding: 12px 2px 22px;
+}
+
+.app-kicker {
+  margin: 0 0 8px;
+  color: var(--primary-dark);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.1;
+}
+
+.app-subtitle {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.todo-panel {
+  min-height: 390px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.todo-form {
+  display: grid;
+  grid-template-columns: 1fr 76px;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.todo-input {
+  width: 100%;
+  min-width: 0;
+  height: 48px;
+  padding: 0 14px;
+  color: var(--text);
+  background: #f8fbfb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.todo-input:focus {
+  background: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(14, 165, 164, 0.14);
+}
+
+.add-button {
+  height: 48px;
+  color: #ffffff;
+  font-weight: 700;
+  background: var(--primary);
+  border: 0;
+  border-radius: 8px;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.add-button:active {
+  background: var(--primary-dark);
+  transform: translateY(1px);
+}
+
+.todo-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.todo-item {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 10px 12px;
+  background: #f8fbfb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.todo-check {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--primary);
+}
+
+.todo-text {
+  min-width: 0;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.todo-item.is-done .todo-text {
+  color: #8ba1a6;
+  text-decoration: line-through;
+}
+
+.delete-button {
+  padding: 8px 4px;
+  color: var(--danger);
+  background: transparent;
+  border: 0;
+  font-size: 14px;
+}
+
+.delete-button:active {
+  opacity: 0.72;
+}
+
+.empty-state {
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+  padding: 24px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.empty-state.is-hidden {
+  display: none;
+}
+
+.empty-icon {
+  width: 58px;
+  height: 58px;
+  margin-bottom: 14px;
+  border: 2px solid rgba(14, 165, 164, 0.32);
+  border-radius: 8px;
+  position: relative;
+}
+
+.empty-icon::before,
+.empty-icon::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  height: 2px;
+  background: rgba(14, 165, 164, 0.36);
+}
+
+.empty-icon::before {
+  top: 20px;
+}
+
+.empty-icon::after {
+  top: 34px;
+}
+
+.empty-state p {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.empty-state span {
+  font-size: 14px;
+}
+
+.todo-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 4px 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.todo-footer strong {
+  color: var(--primary-dark);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 360px) {
+  .app-shell {
+    padding-inline: 12px;
+  }
+
+  .todo-form {
+    grid-template-columns: 1fr 68px;
+  }
+
+  .todo-panel {
+    padding: 12px;
+  }
+}
